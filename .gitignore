@@ -2,3 +2,6 @@
 /error.txt
 /myenv
 /__pycache__
+/core/__pycache__/
+/data
+/core/bin
