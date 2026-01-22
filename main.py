@@ -16,15 +16,15 @@ def start_pipeline(anime_url):
         # ЭТАП 1: Поиск прямой ссылки через Playwright
         print("[1/3] Поиск прямой ссылки на видео...")
         scraper = AnimeScraper()
-        # Мы передаем URL страницы, scraper вернет прямую ссылку на .mp4
-        direct_link = scraper.get_video_link(anime_url)
+        # Передаем URL страницы, scraper вернет прямую ссылку на .mp4
+        video_url, video_type = scraper.get_video_link(TARGET_URL)
         print(f"[УСПЕХ] Ссылка получена.")
 
         # ЭТАП 2: Скачивание через FFmpeg
         print("\n[2/3] Запуск загрузки видео...")
         downloader = VideoDownloader()
         # Сохраняем во временную папку под коротким именем
-        raw_video_path = downloader.download(direct_link, "episode_raw.mp4")
+        raw_video_path = downloader.download(video_url, video_type, "episode_raw.mp4")
         
         # ЭТАП 3: Апскейл через бинарник Real-CUGAN
         # print("\n[3/3] Запуск нейросетевой обработки (Real-CUGAN)...")
@@ -37,7 +37,7 @@ def start_pipeline(anime_url):
         # print(f"Результат: {final_video_path}")
         # print("="*50)
 
-        # Опционально: удаление временного файла после обработки
+       
         # os.remove(raw_video_path)
 
     except Exception as e:
@@ -45,8 +45,7 @@ def start_pipeline(anime_url):
         sys.exit(1)
 
 if __name__ == "__main__":
-    # Ссылка на конкретный эпизод, которую мы анализировали
-    # В будущем сюда можно добавить ввод через input() или аргументы командной строки
-    TARGET_URL = "https://v3.animelib.org/ru/anime/25364--mayonaka-heart-tune-anime/watch?episode=136372&player=Animelib&team=62078&translation_type=2"
+    
+    TARGET_URL = input("Введите ссылку: ")
     
     start_pipeline(TARGET_URL)
