@@ -2,15 +2,18 @@ import subprocess
 import os
 import shutil
 import time
-from config import CUGAN_CONFIG, OUTPUT_DIR, TEMP_DIR
+from config import CUGAN_CONFIG, TEMP_DIR
 
 class UpscaleProcessor:
-    def __init__(self):
+    def __init__(self, output_dir=None):
         self.exe_path = os.path.normpath(os.path.abspath(os.path.join("core", "bin", "realcugan", "realcugan-ncnn-vulkan.exe")))
         
         # Создаем подпапки для кадров внутри temp
         self.frames_in = os.path.join(TEMP_DIR, "frames_in")
         self.frames_out = os.path.join(TEMP_DIR, "frames_out")
+
+        from config import OUTPUT_DIR
+        self.output_dir = output_dir if output_dir else OUTPUT_DIR
 
     def _prepare_dirs(self):
         """Очистка и создание папок для кадров"""
@@ -21,7 +24,7 @@ class UpscaleProcessor:
 
     def process(self, input_path, output_filename="episode_4k_final.mp4"):
         input_path = os.path.normpath(os.path.abspath(input_path))
-        output_path = os.path.normpath(os.path.abspath(os.path.join(OUTPUT_DIR, output_filename)))
+        output_path = os.path.normpath(os.path.abspath(os.path.join(self.output_dir, output_filename)))
         
         self._prepare_dirs()
 
@@ -75,5 +78,5 @@ class UpscaleProcessor:
         # shutil.rmtree(self.frames_in)
         # shutil.rmtree(self.frames_out)
         
-        print(f"[+] Готово! Результат: {output_path}")
+        print(f"[*] Финальный файл будет сохранен здесь: {output_path}")
         return output_path
