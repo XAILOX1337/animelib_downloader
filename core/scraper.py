@@ -12,6 +12,9 @@ class AnimeScraper:
         self.video_type = None
         # Путь к распакованному AdBlock 
         self.extension_path = os.path.abspath("core/extensions/adblock")
+        self.chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        self.user_data_dir = r"C:\Users\kl1m\AppData\Local\Google\Chrome\User Data"
+        
 
     def _intercept_network(self, request):
         url = request.url
@@ -40,13 +43,26 @@ class AnimeScraper:
 
             context = p.chromium.launch_persistent_context(
                 user_data_dir,
+                executable_path=self.chrome_path,
                 headless=False, # Расширения работают только в видимом режиме
-                args=args,
+                ignore_default_args=["--enable-automation"], 
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-infobars" # Убирает плашку в старых версиях
+                ],
                 user_agent=HEADERS["User-Agent"],
                 viewport={'width': 1280, 'height': 720}
             )
             
-            page = context.new_page()
+            
+
+            page = context.pages[0]
+
+            page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+            
+
             page.on("request", self._intercept_network)
 
             print(f"[*] Переход на: {page_url}")

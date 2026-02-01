@@ -53,10 +53,16 @@ def start_pipeline(TARGET_URL, custom_output_path):
         downloader.download(video_url, video_type, "episode_raw.mp4")
         
         # ЭТАП 3: Апскейл через бинарник Real-CUGAN
-        print("\n[3/3] Запуск нейросетевой обработки (Real-CUGAN)...")
-        processor = UpscaleProcessor(custom_output_path)
-        
-        processor.process(TEMP_DIR + "/episode_raw.mp4", "episode_4k_final.mp4")
+        needUpscale = False
+        usersChoose = input("Хотите ли вы проапскейлить скачанное видео? (y/n) (По умолчанию n): ")
+        if usersChoose == "y":
+            needUpscale = True
+        if needUpscale:
+
+            print("\n[3/3] Запуск нейросетевой обработки (Real-CUGAN)...")
+            processor = UpscaleProcessor(custom_output_path)
+            
+            processor.process(TEMP_DIR + "/episode_raw.mp4", "episode_4k_final.mp4")
 
         print("\n" + "="*50)
         print(f"ПОЛНЫЙ ЦИКЛ ЗАВЕРШЕН!")
@@ -64,7 +70,7 @@ def start_pipeline(TARGET_URL, custom_output_path):
         print("="*50)
 
        
-        # os.remove(raw_video_path)
+        os.remove(TEMP_DIR)
 
     except Exception as e:
         print(f"\n[КРИТИЧЕСКАЯ ОШИБКА] {str(e)}")
