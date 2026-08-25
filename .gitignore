@@ -1,6 +1,7 @@
 /.vs
 /error.txt
 /myenv
+/.venv
 /__pycache__
 /core/__pycache__/
 /data

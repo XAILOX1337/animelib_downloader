@@ -1,13 +1,12 @@
 import os
 import subprocess
-import sys
+import re
 
 from config import HEADERS, TEMP_DIR
 
 
 class VideoDownloader:
     def __init__(self):
-        # Проверяем, установлен ли ffmpeg в системе
         try:
             subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -17,23 +16,20 @@ class VideoDownloader:
         output_path = os.path.join(TEMP_DIR, filename)
         headers_str = "".join([f"{k}: {v}\r\n" for k, v in HEADERS.items()])
 
-        # Базовая команда с флагами переподключения
         command = [
             "ffmpeg", "-y",
             "-headers", headers_str,
-            # --- Защита от обрывов при длинной загрузке ---
-            "-timeout", "10000000",        # 10 сек таймаут на I/O операции (в микросекундах)
-            "-rw_timeout", "10000000",     # 10 сек таймаут на чтение/запись
-            "-reconnect", "1",             # Включить переподключение
-            "-reconnect_streamed", "1",    # Переподключение для потоковых протоколов (HLS)
-            "-reconnect_delay_max", "5",   # Макс. задержка между попытками (сек)
+            "-timeout", "10000000",
+            "-rw_timeout", "10000000",
+            "-reconnect", "1",
+            "-reconnect_streamed", "1",
+            "-reconnect_delay_max", "5",
         ]
 
-        # Если это HLS-плейлист
         if file_type == "m3u8":
             command += [
                 "-protocol_whitelist", "file,http,https,tcp,tls,crypto,httpls,concat",
-                "-max_reload", "10",             # Сколько раз перезагружать плейлист (для динамических)
+                "-max_reload", "10",
             ]
 
         command += [
@@ -44,9 +40,8 @@ class VideoDownloader:
         ]
 
         print(f"[*] Загрузка пошла ({file_type})...")
-        print(f"[*] URL: {url[:80]}..." )
+        print(f"[*] Сохраняю как: {filename}")
 
-        # Используем Popen вместо run — чтобы видеть прогресс в реальном времени
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -59,11 +54,7 @@ class VideoDownloader:
         for line in process.stdout:
             line = line.rstrip()
             if line:
-                # FFmpeg пишет прогресс в stderr (мы объединили в stdout)
-                # Пропускаем инфо-строки, показываем только прогресс и ошибки
                 if "time=" in line or "speed=" in line:
-                    # Извлекаем время и скорость для компактного вывода
-                    import re
                     time_match = re.search(r"time=(\S+)", line)
                     speed_match = re.search(r"speed=(\S+)", line)
                     if time_match or speed_match:
@@ -74,15 +65,14 @@ class VideoDownloader:
                     print(f"\n    [!] {line}")
 
         process.wait()
-        print()  # перенос строки после прогресс-бара
+        print()
 
         if process.returncode != 0:
             raise Exception(f"FFmpeg не смог скачать поток (код {process.returncode}).")
 
-        # Проверяем, что файл не пустой
         if not os.path.exists(output_path) or os.path.getsize(output_path) < 1024:
             raise Exception("Файл пустой или повреждён после загрузки.")
 
         file_mb = os.path.getsize(output_path) / (1024 * 1024)
-        print(f"[+] Загрузка завершена: {output_path} ({file_mb:.1f} MB)")
+        print(f"[+] Загрузка завершена: {filename} ({file_mb:.1f} MB)")
         return output_path
