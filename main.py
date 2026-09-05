@@ -32,13 +32,6 @@ def get_user_settings():
 
 
 def build_filename(title, episode_str, suffix="raw"):
-    """
-    Собрать имя файла из названия тайтла и номера серии.
-    Примеры:
-      Моб Психо 100 - 01 эпизод_raw.mp4
-      Моб Психо 100 - Фильм_raw.mp4
-      Моб Психо 100 - 01 эпизод_4k.mp4
-    """
     safe_name = title if title else "Unknown_anime"
 
     if episode_str == "Фильм":
@@ -50,31 +43,24 @@ def build_filename(title, episode_str, suffix="raw"):
 
 
 def start_pipeline(TARGET_URL, custom_output_path):
-    """
-    Основной конвейер: Поиск ссылки -> Скачивание -> Апскейл
-    """
     print("\n" + "=" * 50)
     print("      ANIME UPSCALER PIPELINE STARTING")
     print("=" * 50 + "\n")
 
     try:
-        # ЭТАП 1: Поиск прямой ссылки + метаданных через Playwright
         print("[1/3] Поиск прямой ссылки на видео...")
         scraper = AnimeScraper()
         video_url, video_type, title, episode_str = scraper.get_video_link(TARGET_URL)
         print(f"[УСПЕХ] Ссылка получена.")
 
-        # Собираем имя файла из метаданных
         raw_filename = build_filename(title, episode_str, suffix="raw")
         final_filename = build_filename(title, episode_str, suffix="4k_final")
         raw_path = os.path.join(TEMP_DIR, raw_filename)
 
-        # ЭТАП 2: Скачивание через FFmpeg
         print(f"\n[2/3] Запуск загрузки видео...")
         downloader = VideoDownloader()
         downloader.download(video_url, video_type, raw_filename)
 
-        # ЭТАП 3: Апскейл через бинарник Real-CUGAN
         needUpscale = False
         usersChoose = input(
             "Хотите ли вы проапскейлить скачанное видео? (y/n) (По умолчанию n): "
@@ -92,7 +78,7 @@ def start_pipeline(TARGET_URL, custom_output_path):
             print(f"[*] Файл перемещён: {destination}")
 
         print("\n" + "=" * 50)
-        print(f"ПОЛНЫЙ ЦИКЛ ЗАВЕРШЕН!")
+        print(f"Конец загрузки!")
         print(f"Результат: {custom_output_path}")
         print("=" * 50)
 
@@ -102,8 +88,6 @@ def start_pipeline(TARGET_URL, custom_output_path):
 
 
 if __name__ == "__main__":
-
     custom_output_dir = get_user_settings()
     TARGET_URL = input("Введите ссылку: ")
-
     start_pipeline(TARGET_URL, custom_output_dir)
