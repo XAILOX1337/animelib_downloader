@@ -57,7 +57,7 @@ class AnimeScraper:
             self.video_type = "m3u8"
 
     def _block_ads(self, route):
-        """Синхронный обработчик: прерывает запросы с рекламными URL."""
+        """Блокировщик рекламы прерывает запросы с рекламными URL, описанными в AD_KEYWORDS."""
         try:
             url = route.request.url
             for keyword in AD_KEYWORDS:
@@ -73,12 +73,14 @@ class AnimeScraper:
 
     @staticmethod
     def _sanitize_filename(name):
+        """Функция для удаления запрещенных символов из названия файла"""
         invalid = '<>:"/\\|?*'
         for char in invalid:
             name = name.replace(char, '')
         return name.strip('. ')
 
     def _extract_title(self, page):
+        """Функция для извлечения названия тайтла"""
         try:
             title_el = page.locator("h1 a").first
             title_el.wait_for(state="visible", timeout=5000)
@@ -193,8 +195,7 @@ class AnimeScraper:
                 viewport={"width": 1280, "height": 720},
             )
 
-            # Блокировка рекламы на уровне КОНТЕКСТА — действует на все страницы,
-            # попапы и iframe (плеер обычно во фрейме). Ставим ДО перехода.
+        
             context.route("**/*", self._block_ads)
 
             page = context.pages[0]
