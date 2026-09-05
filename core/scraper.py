@@ -4,6 +4,34 @@ import os
 import re
 from config import HEADERS
 
+# рекламные домены 
+AD_KEYWORDS = [
+    # Рекламная хуйня Яндекса
+    "strm.yandex.ru",        
+    "an.yandex.ru",          
+    "yandex.ru/clck",        
+    "adfox.ru",              
+    "adfox.yandex",          
+    "yandexadexchange.net",  
+    "awaps.yandex.net",     
+    "mc.yandex.ru",        
+    "yastatic.net/adv",    
+    # # Прочие распространённые рекламные/аналитические сети
+    # "googleads",
+    # "doubleclick",
+    # "googlesyndication",
+    # "google-analytics",
+    # "adservice",
+    # "adsense",
+    # "adsystem",
+    # "taboola",
+    # "outbrain",
+    # "criteo",
+    # "adsrvr",
+    # "pubmatic",
+    # "pixel",
+]
+
 
 class AnimeScraper:
     def __init__(self):
@@ -11,6 +39,7 @@ class AnimeScraper:
         self.video_type = None
         self.title = None
         self.episode_str = None
+        self.blocked_count = 0
 
         _file_dir = os.path.dirname(os.path.abspath(__file__))
         self.extension_path = os.path.normpath(
@@ -26,6 +55,21 @@ class AnimeScraper:
         elif ".m3u8" in url and ("720" in url or "480" in url):
             self.video_url = url
             self.video_type = "m3u8"
+
+    def _block_ads(self, route):
+        """Синхронный обработчик: прерывает запросы с рекламными URL."""
+        try:
+            url = route.request.url
+            for keyword in AD_KEYWORDS:
+                if keyword in url:
+                    self.blocked_count += 1
+                    print(f"Заблокировано ({keyword})")
+                    route.abort()
+                    return
+            route.continue_()
+        except Exception:
+            # На всякий
+            pass
 
     @staticmethod
     def _sanitize_filename(name):
@@ -120,6 +164,7 @@ class AnimeScraper:
         self.video_type = None
         self.title = None
         self.episode_str = None
+        self.blocked_count = 0
 
         with sync_playwright() as p:
             _file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -147,6 +192,10 @@ class AnimeScraper:
                 user_agent=HEADERS["User-Agent"],
                 viewport={"width": 1280, "height": 720},
             )
+
+            # Блокировка рекламы на уровне КОНТЕКСТА — действует на все страницы,
+            # попапы и iframe (плеер обычно во фрейме). Ставим ДО перехода.
+            context.route("**/*", self._block_ads)
 
             page = context.pages[0]
             page.add_init_script(
@@ -206,6 +255,7 @@ class AnimeScraper:
             except Exception as e:
                 print(f"[!] Ошибка при автоматизации действий: {e}")
 
+            print(f"[*] Заблокировано рекламных запросов: {self.blocked_count}")
             context.close()
 
             if not self.video_url:
